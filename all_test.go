@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"testing"
 
-	. "gopkg.in/check.v1"
 	"gopkg.in/xmlpath.v2"
 	"strings"
 )
@@ -257,6 +256,9 @@ var libraryTable = []struct {
 
 	// Whitespace handling.
 	{" / descendant-or-self :: node() // child :: book / child :: * [ contains( . , '083' ) ] ", "0836217462"},
+
+	// Equals-off-by-one.
+	{"library/book[isbn='083621746']", exists(false)},
 }
 
 var libraryXml = []byte(`
