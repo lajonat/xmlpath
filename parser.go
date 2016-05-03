@@ -1,8 +1,8 @@
 package xmlpath
 
 import (
-	"golang.org/x/net/html"
 	"encoding/xml"
+	"golang.org/x/net/html"
 	"io"
 	"strings"
 )
@@ -41,6 +41,14 @@ const (
 	commentNode
 	procInstNode
 )
+
+// Name returns the name value of node.
+// Use it to get:
+//   Space - node namespace
+//   Name  - node local name
+func (node *Node) Name() xml.Name {
+	return node.name
+}
 
 // String returns the string value of node.
 //
