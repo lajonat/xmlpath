@@ -5,7 +5,8 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"gopkg.in/xmlpath.v2"
+	"github.com/lajonat/xmlpath"
+	. "gopkg.in/check.v1"
 	"strings"
 )
 
@@ -234,6 +235,17 @@ var libraryTable = []struct {
 	{"library/book[2]/isbn", []string{"0883556316"}},
 	{"library/book[0]/isbn", cerror(": positions start at 1")},
 	{"library/book[-1]/isbn", cerror(": positions must be positive")},
+	{"library/book[position()=2]/isbn", []string{"0883556316"}},
+	{"library/book[position()!=2]/isbn", []string{"0836217462"}},
+	{"library/book[1]/character[position()>1]/@id", []string{"Snoopy", "Schroeder", "Lucy"}},
+	{"library/book[1]/character[position()>=1]/@id", []string{"PP", "Snoopy", "Schroeder", "Lucy"}},
+	{"library/book[1]/character[position()<2]/@id", []string{"PP"}},
+	{"library/book[1]/character[position()<=2]/@id", []string{"PP", "Snoopy"}},
+	{"library/book[1]/character[position()<1]/@id", exists(false)},
+	{"library/book[position()=0]/isbn", cerror(": positions start at 1")},
+	{"library/book[position()=-1]/isbn", cerror(": position() not followed by number")},
+	{"library/book[position()=d]/isbn", cerror(": position() not followed by number")},
+	{"library/book[position()!3]/isbn", cerror(": position() not followed by operator")},
 	{"//title[contains(.,'ney Google and')]", "Barney Google and Snuffy Smith"},
 	{"//@id[contains(.,'0836')]", "b0836217462"},
 	{"//*[contains(born,'1922')]/name", "Charles M Schulz"},

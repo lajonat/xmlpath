@@ -134,7 +134,7 @@ func (s *pathStepState) next() bool {
 func (s *pathStepState) test(pred predicate) bool {
 	switch pred := pred.(type) {
 	case positionPredicate:
-		if pred.pos == s.pos {
+		if pred.operator(pred.pos, s.pos) {
 			return true
 		}
 	case existsPredicate:
@@ -368,7 +368,8 @@ func (s *pathStepState) _next() bool {
 }
 
 type positionPredicate struct {
-	pos int
+	pos      int
+	operator positionFunc
 }
 
 type existsPredicate struct {
@@ -415,6 +416,16 @@ func (startsWithPredicate) predicate() {}
 func (notPredicate) predicate()        {}
 func (andPredicate) predicate()        {}
 func (orPredicate) predicate()         {}
+
+// positionFunc is a type interface for all position comparison operators
+type positionFunc func(wanted, current int) bool
+
+func equalPosition(wanted, current int) bool        { return wanted == current }
+func notequalPosition(wanted, current int) bool     { return wanted != current }
+func largerPosition(wanted, current int) bool       { return current > wanted }
+func smallerPosition(wanted, current int) bool      { return current < wanted }
+func largerequalPosition(wanted, current int) bool  { return current >= wanted }
+func smallerequalPosition(wanted, current int) bool { return current <= wanted }
 
 type pathStep struct {
 	root bool
@@ -591,7 +602,38 @@ func (c *pathCompiler) parsePath() (path *Path, err error) {
 				if pos == 0 {
 					return nil, c.errorf("positions start at 1")
 				}
-				next = positionPredicate{pos}
+				next = positionPredicate{pos: pos, operator: equalPosition}
+			} else if c.skipString("position()") {
+				c.skipSpaces()
+				if operator, ok := c.parseOperator(); !ok {
+					return nil, c.errorf("position() not followed by operator")
+				} else {
+					var operatorFunc positionFunc
+					switch operator {
+					case "=":
+						operatorFunc = equalPosition
+					case "!=":
+						operatorFunc = notequalPosition
+					case "<=":
+						operatorFunc = smallerequalPosition
+					case ">=":
+						operatorFunc = largerequalPosition
+					case "<":
+						operatorFunc = smallerPosition
+					case ">":
+						operatorFunc = largerPosition
+					}
+
+					c.skipSpaces()
+					if pos, ok := c.parseInt(); !ok {
+						return nil, c.errorf("position() not followed by number")
+					} else {
+						if pos == 0 {
+							return nil, c.errorf("positions start at 1")
+						}
+						next = positionPredicate{pos: pos, operator: operatorFunc}
+					}
+				}
 			} else if c.skipString("contains(") {
 				path, err := c.parsePath()
 				if err != nil {
@@ -754,6 +796,28 @@ func (c *pathCompiler) parseInt() (v int, ok bool) {
 		return 0, false
 	}
 	return v, true
+}
+
+func (c *pathCompiler) parseOperator() (v string, ok bool) {
+	if c.skipString("=") {
+		return "=", true
+	}
+	if c.skipString("!=") {
+		return "!=", true
+	}
+	if c.skipString(">=") {
+		return ">=", true
+	}
+	if c.skipString(">") {
+		return ">", true
+	}
+	if c.skipString("<=") {
+		return "<=", true
+	}
+	if c.skipString("<") {
+		return "<", true
+	}
+	return "", false
 }
 
 func (c *pathCompiler) skipByte(b byte) bool {
