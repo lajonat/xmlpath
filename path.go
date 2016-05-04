@@ -148,6 +148,13 @@ func (s *pathStepState) test(pred predicate) bool {
 				return true
 			}
 		}
+	case notequalsPredicate:
+		iter := pred.path.Iter(s.node)
+		for iter.Next() {
+			if !iter.Node().equals(pred.value) {
+				return true
+			}
+		}
 	case containsPredicate:
 		iter := pred.path.Iter(s.node)
 		for iter.Next() {
@@ -380,6 +387,10 @@ type equalsPredicate struct {
 	path  *Path
 	value string
 }
+type notequalsPredicate struct {
+	path  *Path
+	value string
+}
 
 type containsPredicate struct {
 	path  *Path
@@ -411,6 +422,7 @@ type predicate interface {
 func (positionPredicate) predicate()   {}
 func (existsPredicate) predicate()     {}
 func (equalsPredicate) predicate()     {}
+func (notequalsPredicate) predicate()  {}
 func (containsPredicate) predicate()   {}
 func (startsWithPredicate) predicate() {}
 func (notPredicate) predicate()        {}
@@ -695,6 +707,13 @@ func (c *pathCompiler) parsePath() (path *Path, err error) {
 						return nil, c.errorf("%v", err)
 					}
 					next = equalsPredicate{path, value}
+				} else if c.skipString("!=") {
+					c.skipSpaces()
+					value, err := c.parseLiteral()
+					if err != nil {
+						return nil, c.errorf("%v", err)
+					}
+					next = notequalsPredicate{path, value}
 				} else {
 					next = existsPredicate{path}
 				}

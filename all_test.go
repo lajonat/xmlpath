@@ -230,6 +230,8 @@ var libraryTable = []struct {
 	{"library/book[@id='b0883556316']/isbn", []string{"0883556316"}},
 	{"library/book[ @id = 'b0883556316' ]/isbn", []string{"0883556316"}},
 	{"library/book[isbn='0836217462']/character[born='1950-10-04']/name", []string{"Snoopy"}},
+	{"library/book[@id!='b0883556316']/isbn", []string{"0836217462"}},
+	{"library/book[@id!='blabla']/isbn", []string{"0836217462", "0883556316"}},
 	{"library/book[quote]/@id", []string{"b0836217462"}},
 	{"library/book[./character/born='1922-07-17']/@id", []string{"b0883556316"}},
 	{"library/book[2]/isbn", []string{"0883556316"}},
